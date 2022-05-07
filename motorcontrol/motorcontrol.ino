@@ -2,62 +2,12 @@
 
 #include <Adafruit_PWMServoDriver.h>
 
-
-/*
- * Original sourse: https://github.com/adafruit/Adafruit-PWM-Servo-Driver-Library
- * This is the Arduino code PAC6985 16 channel servo controller
- * watch the video for details and demo http://youtu.be/y8X9X10Tn1k
- *  * 
- 
- * Watch video for this code: 
- * 
- * Related Videos
-V5 video of PCA9685 32 Servo with ESP32 with WiFi https://youtu.be/bvqfv-FrrLM
-V4 video of PCA9685 32 Servo with ESP32 (no WiFi): https://youtu.be/JFdXB8Za5Os
-V3 video of PCA9685 how to control 32 Servo motors https://youtu.be/6P21wG7N6t4
-V2 Video of PCA9685 3 different ways to control Servo motors: https://youtu.be/bal2STaoQ1M
-V1 Video introduction to PCA9685 to control 16 Servo  https://youtu.be/y8X9X10Tn1k
-
- * Written by Ahmad Shamshiri for Robojax Video channel www.Robojax.com
- * Date: Dec 16, 2017, in Ajax, Ontario, Canada
- * Permission granted to share this code given that this
- * note is kept with the code.
- * Disclaimer: this code is "AS IS" and for educational purpose only.
- * this code has been downloaded from http://robojax.com/learn/arduino/
- * 
- */
-/*************************************************** 
-  This is an example for our Adafruit 16-channel PWM & Servo driver
-  Servo test - this will drive 16 servos, one after the other
-
-  Pick one up today in the adafruit shop!
-  ------> http://www.adafruit.com/products/815
-
-  These displays use I2C to communicate, 2 pins are required to  
-  interface. For Arduino UNOs, thats SCL -> Analog 5, SDA -> Analog 4
-
-  Adafruit invests time and resources providing this open source code, 
-  please support Adafruit and open-source hardware by purchasing 
-  products from Adafruit!
-
-  Written by Limor Fried/Ladyada for Adafruit Industries.  
-  BSD license, all text above must be included in any redistribution
- ****************************************************/
-
-// called this way, it uses the default address 0x40
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-// you can also call it with a different address you want
-//Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x41);
 
-// Depending on your servo make, the pulse width min and max may vary, you 
-// want these to be as small/large as possible without hitting the hard stop
-// for max range. You'll have to tweak them as necessary to match the servos you
-// have!
 #define SERVOMIN  125 // this is the 'minimum' pulse length count (out of 4096)
 #define SERVOMAX  575 // this is the 'maximum' pulse length count (out of 4096)
 
-// our servo # counter
-uint8_t servonum = 0;
+char data[2];
 
 void setup() {
   Serial.begin(9600);
@@ -66,20 +16,27 @@ void setup() {
   pwm.begin();
   
   pwm.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
-
+  pwm.setPWM(0, 0, angleToPulse(90)); 
+  pwm.setPWM(1, 0, angleToPulse(90)); 
+  pwm.setPWM(2, 0, angleToPulse(90)); 
+  pwm.setPWM(3, 0, angleToPulse(90));
   //yield();
 }
 
 // the code inside loop() has been updated by Robojax
 void loop() {
-
   if (Serial.available() > 0) {
-    // read the oldest byte in the serial buffer:
-    String command = Serial.readStringUntil('\n');
-    int motor = command.substring(0,2).toInt();
-    int angle = command.substring(2,5).toInt();
-    pwm.setPWM(motor, 0, angleToPulse(angle)); 
-    //delay(1000);
+    int len = Serial.readBytes(data, 2);
+    if (len == 2) {
+      int angle_x = data[0];
+      int angle_y = data[1];
+      //Serial.print("angle x:"); Serial.println(angle_x);
+      //Serial.print("angle y:"); Serial.println(angle_y);
+      pwm.setPWM(0, 0, angleToPulse(angle_x)); 
+      pwm.setPWM(1, 0, angleToPulse(angle_y)); 
+      pwm.setPWM(2, 0, angleToPulse(angle_x)); 
+      pwm.setPWM(3, 0, angleToPulse(angle_y)); 
+    }
   }
 }
 
@@ -90,8 +47,5 @@ void loop() {
  * written by Ahmad Nejrabi for Robojax, Robojax.com
  */
 int angleToPulse(int ang){
-   int pulse = map(ang,0, 180, SERVOMIN,SERVOMAX);// map angle of 0 to 180 to Servo min and Servo max 
-   Serial.print("Angle: ");Serial.print(ang);
-   Serial.print(" pulse: ");Serial.println(pulse);
-   return pulse;
+   return map(ang,0, 180, SERVOMIN,SERVOMAX);// map angle of 0 to 180 to Servo min and Servo max 
 }
